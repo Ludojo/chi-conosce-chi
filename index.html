@@ -250,13 +250,14 @@
   <h2>Aggiungi chi manca</h2>
   <div class="nota">Prima controlla che non ci sia già: mentre scrivi, qui sotto compaiono le schede più simili.</div>
   <form id="fAggiungi">
-    <label for="aCat">Professione</label>
+    <p class="dove" style="margin:10px 0 0">I campi con <b>*</b> sono obbligatori. Serve il nome della persona <b>oppure</b> dello studio.</p>
+    <label for="aCat">Professione *</label>
     <select id="aCat" class="campo"></select>
-    <label for="aPers">Nome e cognome della persona</label>
+    <label for="aPers">Nome e cognome della persona *</label>
     <input id="aPers" class="campo" maxlength="80" autocapitalize="words" autocomplete="off">
-    <label for="aAtt">Studio o attività (se c'è)</label>
+    <label for="aAtt">Studio o attività (* se manca il nome della persona)</label>
     <input id="aAtt" class="campo" maxlength="100" autocomplete="off">
-    <label for="aCom">Comune</label>
+    <label for="aCom">Comune *</label>
     <input id="aCom" class="campo" list="comuni" maxlength="50" autocomplete="off">
     <datalist id="comuni"></datalist>
     <label for="aSpec">Specializzazione (se vuoi)</label>
@@ -295,9 +296,13 @@
     if (DEMO) return Prova[fn].apply(null, args);
     if (!GAS) {
       // corpo come testo semplice: niente richiesta preliminare CORS; Google risponde con un redirect che fetch segue
-      return fetch(API, { method: 'POST', body: JSON.stringify({ azione: fn, args: args }) })
+      // mai un caricamento infinito: dopo 45 secondi si ferma e dice di riprovare
+      var ctl = window.AbortController ? new AbortController() : null;
+      var t = ctl && setTimeout(function () { ctl.abort(); }, 45000);
+      return fetch(API, { method: 'POST', body: JSON.stringify({ azione: fn, args: args }), signal: ctl ? ctl.signal : undefined })
         .then(function (r) { if (!r.ok) throw new Error('Connessione non riuscita, riprova.'); return r.json(); })
-        .then(function (j) { if (j.errore) throw new Error(j.errore); return j.ok; });
+        .then(function (j) { clearTimeout(t); if (j.errore) throw new Error(j.errore); return j.ok; },
+              function (e) { clearTimeout(t); throw new Error(e && e.name === 'AbortError' ? 'La connessione è lenta: riprova tra poco.' : msgErrore(e)); });
     }
     return new Promise(function (ok, ko) {
       var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ko(e && e.message ? e : new Error(String(e))); });
@@ -323,7 +328,9 @@
     $('caricamento').textContent = 'Carico l\'elenco…';
     // elenco (compresso, e dal telefono se non è cambiato) e segnalazioni insieme: due chiamate in parallelo
     var salvato = leggiPacchetto();
-    Promise.all([chiama('pacchetto', pwd, salvato ? salvato.v : ''), chiama('stato', pwd), chiama('aggiunte', pwd)]).then(function (ris) {
+    // una sola chiamata al server per elenco, segnalazioni e schede aggiunte
+    chiama('avvio', pwd, salvato ? salvato.v : '').then(function (av) {
+      var ris = [av.p, av.s, av.a];
       S.pwd = pwd; scriviM('pwd', pwd);
       $('barra').firstElementChild.style.width = '80%';
       var p = ris[0];
@@ -560,6 +567,7 @@
 
   // la scheda cambia subito (senza aspettare Google); se il salvataggio non riesce torna com'era
   function invia(id, az, nome) {
+    if (id < 0) { avviso('Un attimo: questa scheda si sta ancora salvando.'); return; }
     var r = S.perId[id], prima = [id, r[CONO], r[CONT], r[CONTDA]];
     var l = lista(r[CONO]).filter(function (x) { return x.toLowerCase() !== nome.toLowerCase(); });
     if (az === 'conosco') l.push(nome);
@@ -610,10 +618,14 @@
   function aggiungiRighe(lista) {
     (lista || []).forEach(function (a) {
       var id = Number(a[0]); if (!id || S.perId[id]) return;
-      var r = [id, a[1], a[2], a[3], a[4], a[5], a[6], '', a[7], '', 'Aggiunto da ' + a[8] + ' il ' + String(a[9]).slice(0, 10), '', '', ''];
+      var r = [id, a[1], a[2], a[3], a[4], a[5], a[6], '', a[7], '', 'Aggiunto da ' + a[8] + (a[9] ? ' il ' + String(a[9]).slice(0, 10) : ''), '', '', ''];
       S.righe.push(r); S.perId[id] = r; indicizza(r);
       if (S.categorie.indexOf(a[1]) < 0) S.categorie.push(a[1]);
     });
+  }
+  function togliRiga(id) {
+    delete S.perId[id];
+    S.righe = S.righe.filter(function (r) { return r[ID] !== id; });
   }
   function provinciaDi(c) {
     var n = norm(c);
@@ -661,15 +673,23 @@
       comune: com, provincia: provinciaDi(com), spec: $('aSpec').value.trim() };
     var err = !d.categoria ? 'Scegli la professione.' : (!pers && !d.attivita) ? 'Scrivi il nome della persona o dello studio.' : !com ? 'Scrivi il comune.' : '';
     if (err) { $('aErr').textContent = err; return; }
-    $('aErr').textContent = ''; $('bAggSalva').disabled = true; $('bAggSalva').textContent = 'Salvo…';
+    // la scheda compare subito (ID provvisorio) e si salva dietro; se il salvataggio non riesce sparisce e si avvisa
+    $('aErr').textContent = '';
+    var tmp = -Date.now();
+    aggiungiRighe([[tmp, d.categoria, d.nome, d.cognome, d.attivita, d.comune, d.provincia, d.spec, S.io + ' (salvataggio in corso)', '']]);
+    applica([tmp, S.io, '', '', '']);
+    $('dAggiungi').close();
+    $('fCat').value = ''; $('fProv').value = ''; $('fStato').value = ''; $('cerca').value = pers || d.attivita;
+    filtra(); window.scrollTo(0, 0);
+    avviso('Aggiunto, grazie! Lo sto salvando…');
     chiama('aggiungi', S.pwd, d, S.io).then(function (res) {
-      aggiungiRighe([res.riga]); applica(res.stato); aggiornaCategorie(); aggiornaNomi();
-      $('dAggiungi').close();
-      $('fCat').value = ''; $('fProv').value = ''; $('fStato').value = ''; $('cerca').value = pers || d.attivita;
-      filtra(); window.scrollTo(0, 0);
-      avviso('Aggiunto, grazie! Ora lo vedono tutti.');
-    }).catch(function (e) { $('aErr').textContent = 'Non salvato: ' + msgErrore(e); })
-      .then(function () { $('bAggSalva').disabled = false; $('bAggSalva').textContent = 'Aggiungi'; });
+      togliRiga(tmp);
+      aggiungiRighe([res.riga]); applica(res.stato); aggiornaCategorie(); aggiornaNomi(); filtra();
+      avviso('Salvato: ora lo vedono tutti.');
+    }).catch(function (e) {
+      togliRiga(tmp); filtra();
+      avviso('Non salvato: ' + msgErrore(e) + ' Prima di riaggiungerlo, tra un minuto cercalo: potrebbe essere arrivato lo stesso.');
+    });
   });
 
   /* ---------- riepilogo e finestre ---------- */
@@ -733,6 +753,10 @@
       },
       accedi: function (p) { return ctrl(p) || dopo({ righe: righe.length, categorie: cats.slice().sort().map(function (c) { return [c, c === 'Avvocati' ? 'Matteo, Flavia, Luca' : '']; }), province: ['AP', 'FM', 'MC'] }); },
       dati: function (p, da, q) { return ctrl(p) || dopo(righe.slice(da, da + q)); },
+      avvio: function (p, v) {
+        var e = ctrl(p); if (e) return e;
+        return Promise.all([Prova.pacchetto(p, v), Prova.stato(p), Prova.aggiunte(p)]).then(function (x) { return { p: x[0], s: x[1], a: x[2] }; });
+      },
       aggiunte: function (p) { return ctrl(p) || dopo(aggiunteProva); },
       aggiungi: function (p, d, nome) {
         var e = ctrl(p); if (e) return e;
