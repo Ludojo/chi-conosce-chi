@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>BNI Mistral · Chi conosce chi</title>
+<style>
+  :root {
+    --blu: #1f3a5f; --blu-2: #2c5282; --blu-chiaro: #e8eef6; --fondo: #f6f7f9; --carta: #ffffff;
+    --testo: #1d2430; --tenue: #5b6575; --bordo: #dfe3ea; --verde: #1e7a4f; --verde-chiaro: #e4f4ec;
+    --ambra: #9a5b00; --ambra-chiaro: #fdf1dc; --rosso: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         color: var(--testo); background: var(--fondo); }
+  button, input, select { font: inherit; }
+  [hidden] { display: none !important; }
+  .centro { max-width: 980px; margin: 0 auto; padding: 0 14px; }
+
+  /* accesso */
+  .schermo { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+  .box { background: var(--carta); border: 1px solid var(--bordo); border-radius: 14px; padding: 26px 22px;
+         width: 100%; max-width: 380px; box-shadow: 0 6px 24px rgba(31,58,95,.08); }
+  .box h1 { margin: 0 0 4px; font-size: 21px; color: var(--blu); }
+  .box p { margin: 0 0 16px; color: var(--tenue); }
+  .campo { width: 100%; padding: 11px 12px; border: 1px solid var(--bordo); border-radius: 9px; background: #fff; }
+  .campo:focus { outline: 2px solid var(--blu-2); outline-offset: 0; border-color: transparent; }
+  .btn { border: 0; border-radius: 9px; padding: 10px 14px; cursor: pointer; background: var(--blu); color: #fff; font-weight: 600; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.pieno { width: 100%; margin-top: 12px; }
+  .btn.chiaro { background: var(--blu-chiaro); color: var(--blu); }
+  .btn.bordo { background: #fff; color: var(--blu); border: 1px solid var(--bordo); }
+  .errore { color: var(--rosso); font-size: 14px; min-height: 20px; margin-top: 8px; }
+  .barra { height: 6px; background: var(--blu-chiaro); border-radius: 3px; overflow: hidden; margin-top: 14px; }
+  .barra > div { height: 100%; width: 0; background: var(--blu-2); transition: width .3s; }
+
+  /* app */
+  header { background: var(--blu); color: #fff; position: sticky; top: 0; z-index: 5; }
+  header .centro { display: flex; align-items: center; gap: 10px; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; flex: 1; min-width: 180px; }
+  header h1 small { display: block; font-weight: 400; opacity: .8; font-size: 12px; }
+  header .btn { background: rgba(255,255,255,.14); padding: 7px 11px; font-size: 14px; font-weight: 500; }
+  .numeri { display: flex; gap: 10px; margin: 16px 0 10px; flex-wrap: wrap; }
+  .numero { background: var(--carta); border: 1px solid var(--bordo); border-radius: 11px; padding: 10px 14px; flex: 1; min-width: 140px; }
+  .numero b { display: block; font-size: 22px; color: var(--blu); font-variant-numeric: tabular-nums; }
+  .numero span { color: var(--tenue); font-size: 13px; }
+  .filtri { display: grid; grid-template-columns: 2fr 1.3fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .filtri2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin-bottom: 12px; }
+  @media (max-width: 680px) {
+    .filtri { grid-template-columns: 1fr 1fr; } .filtri #cerca { grid-column: 1 / -1; }
+    .numeri { gap: 6px; flex-wrap: nowrap; } .numero { min-width: 0; padding: 8px 10px; }
+    .numero b { font-size: 18px; } .numero span { font-size: 11.5px; line-height: 1.25; display: block; }
+    header { position: static; }
+  }
+  .conta { color: var(--tenue); font-size: 14px; margin: 6px 0 10px; }
+
+  .scheda { background: var(--carta); border: 1px solid var(--bordo); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; }
+  .scheda.conosciuta { border-left: 4px solid var(--verde); }
+  .testa { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 20px; background: var(--blu-chiaro); color: var(--blu); font-weight: 600; }
+  .dove { color: var(--tenue); font-size: 13px; }
+  .nome { font-size: 17px; font-weight: 650; margin: 6px 0 1px; }
+  .studio { color: var(--tenue); font-size: 14px; }
+  .spec { font-size: 13.5px; margin-top: 5px; }
+  .piede { font-size: 12.5px; color: var(--tenue); margin-top: 6px; }
+  .piede a { color: var(--blu-2); font-weight: 600; text-decoration: none; }
+  .chi { margin-top: 9px; font-size: 13.5px; }
+  .chi .ok { background: var(--verde-chiaro); color: var(--verde); padding: 2px 8px; border-radius: 6px; display: inline-block; margin: 2px 4px 2px 0; }
+  .chi .cont { background: var(--ambra-chiaro); color: var(--ambra); padding: 2px 8px; border-radius: 6px; display: inline-block; margin: 2px 0; }
+  .azioni { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .azioni .btn { font-size: 14px; padding: 8px 12px; }
+  .btn.si { background: var(--verde); }
+  .btn.cont-si { background: var(--ambra); }
+  .altri { display: block; margin: 14px auto 30px; }
+  .vuoto { text-align: center; color: var(--tenue); padding: 40px 10px; }
+
+  dialog { border: 0; border-radius: 14px; padding: 0; width: min(640px, 94vw); max-height: 88vh; box-shadow: 0 16px 50px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(20,30,45,.45); }
+  .dlg { padding: 20px 20px 16px; overflow: auto; max-height: 88vh; }
+  .dlg h2 { margin: 0 0 10px; color: var(--blu); font-size: 19px; }
+  .dlg h3 { margin: 18px 0 6px; font-size: 15px; color: var(--blu); }
+  .dlg ol, .dlg ul { padding-left: 20px; margin: 6px 0; }
+  .dlg li { margin: 5px 0; }
+  .dlg .fondo { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; position: sticky; bottom: -16px; background: #fff; padding: 10px 0 4px; }
+  .nota { background: var(--blu-chiaro); border-radius: 9px; padding: 9px 12px; font-size: 14px; margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--bordo); }
+  th { color: var(--tenue); font-weight: 600; font-size: 12.5px; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.clic { cursor: pointer; }
+  tr.clic:hover td { background: var(--fondo); }
+  .avviso { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--testo); color: #fff;
+            padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 20; max-width: 92vw; }
+  .membri { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 14px; }
+  .membri .btn { padding: 14px 10px; font-size: 16px; }
+  .altro summary { color: var(--blu-2); cursor: pointer; font-size: 14px; margin-bottom: 8px; }
+  .aggiungi { width: 100%; margin: 0 0 12px; padding: 12px; font-size: 15px; }
+  .dlg label { display: block; font-size: 13px; color: var(--tenue); margin: 10px 0 4px; }
+  .simile { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--bordo); font-size: 14px; }
+  .simile .btn { font-size: 13px; padding: 7px 10px; white-space: nowrap; }
+  .demo { background: var(--ambra-chiaro); color: var(--ambra); text-align: center; font-size: 13px; padding: 5px; }
+</style>
+</head>
+<body>
+
+<!-- 1. password -->
+<section id="sAccesso" class="schermo">
+  <div class="box">
+    <h1>BNI Mistral · Chi conosce chi</h1>
+    <p>Pagina riservata ai membri del capitolo. Inserisci la password che hai ricevuto.</p>
+    <form id="fAccesso">
+      <input id="pwd" class="campo" type="text" placeholder="Scrivi qui la password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+      <p class="dove" style="margin:6px 0 0">Maiuscole, spazi e simboli non contano.</p>
+      <button class="btn pieno" id="bAccesso">Entra</button>
+    </form>
+    <div class="errore" id="eAccesso"></div>
+    <div class="barra" id="barra" hidden><div></div></div>
+    <p class="dove" id="caricamento" style="margin:8px 0 0"></p>
+  </div>
+</section>
+
+<!-- 2. nome -->
+<section id="sNome" class="schermo" hidden>
+  <div class="box">
+    <h1>Chi sei?</h1>
+    <p>Tocca il tuo nome: comparirà accanto alle persone che segni come conosciute.</p>
+    <div id="membri" class="membri"></div>
+    <details class="altro">
+      <summary>Non trovo il mio nome</summary>
+      <form id="fNome">
+        <input id="nome" class="campo" list="nomiUsati" placeholder="Scrivi nome e cognome" maxlength="40" required>
+        <datalist id="nomiUsati"></datalist>
+        <button class="btn pieno">Continua</button>
+      </form>
+    </details>
+  </div>
+</section>
+
+<!-- 3. elenco -->
+<section id="sApp" hidden>
+  <div class="demo" id="demo" hidden>Modalità prova: dati finti, niente viene salvato nel foglio.</div>
+  <header>
+    <div class="centro">
+      <h1>Chi conosce chi <small>BNI Mistral · Macerata, Fermo e Ascoli Piceno</small></h1>
+      <button class="btn" id="bIo" title="Cambia nome"></button>
+      <button class="btn" id="bRiepilogo">Riepilogo</button>
+      <button class="btn" id="bIstruzioni">Istruzioni e regole</button>
+      <button class="btn" id="bAggiorna" title="Aggiorna le segnalazioni degli altri">↻</button>
+    </div>
+  </header>
+  <main class="centro">
+    <div class="numeri">
+      <div class="numero"><b id="nTot">0</b><span>professionisti e attività</span></div>
+      <div class="numero"><b id="nCon">0</b><span>conosciuti da qualcuno di noi</span></div>
+      <div class="numero"><b id="nCont">0</b><span>già contattati</span></div>
+    </div>
+    <div class="filtri">
+      <input id="cerca" class="campo" type="search" placeholder="Cerca nome, studio, comune…">
+      <select id="fCat" class="campo"><option value="">Tutte le professioni</option></select>
+      <select id="fProv" class="campo"><option value="">Tutte le province</option></select>
+    </div>
+    <div class="filtri2">
+      <select id="fStato" class="campo">
+        <option value="">Tutti</option>
+        <option value="conosciuti">Conosciuti da qualcuno</option>
+        <option value="miei">Conosciuti da me</option>
+        <option value="dacontattare">Conosciuti ma non ancora contattati</option>
+        <option value="contattati">Già contattati</option>
+      </select>
+      <select id="fOrdina" class="campo">
+        <option value="nome">Ordina per nome</option>
+        <option value="km">Ordina per distanza da Civitanova</option>
+        <option value="comune">Ordina per comune</option>
+      </select>
+    </div>
+    <button class="btn bordo aggiungi" id="bAggiungi">+ Aggiungi chi manca</button>
+    <div class="conta" id="conta"></div>
+    <div id="lista"></div>
+    <button class="btn bordo altri" id="bAltri" hidden>Mostra altri</button>
+  </main>
+</section>
+
+<!-- istruzioni e regole -->
+<dialog id="dIstruzioni"><div class="dlg">
+  <h2>Come si usa</h2>
+  <ol>
+    <li><b>Cerca</b>: scegli una professione o scrivi un nome, un cognome, uno studio o un comune.</li>
+    <li><b>Conosci la persona?</b> Tocca <b>«Lo conosco»</b>: il tuo nome resta sulla scheda e il gruppo sa chi può presentarla. Se hai sbagliato, tocca di nuovo per toglierlo.</li>
+    <li><b>L'hai contattata?</b> Tocca <b>«Segna contattato»</b> e scrivi chi l'ha contattata.</li>
+  </ol>
+  <p>In <b>Riepilogo</b> vedi, per ogni categoria che manca al capitolo, quante persone conosciamo e quante abbiamo già contattato. Il pulsante ↻ carica le segnalazioni degli altri (la pagina lo fa anche da sola ogni due minuti).</p>
+  <div class="nota">Non trovi qualcuno che conosci? Tocca <b>«+ Aggiungi chi manca»</b>: prima controlla che non ci sia già, poi scrivi professione, nome e comune. La scheda compare per tutti con il tuo nome. Telefoni ed email non ci sono di proposito: il link a Google Maps, dove c'è, mostra i recapiti pubblici dell'attività.</div>
+
+  <h2 style="margin-top:22px">Regole d'uso</h2>
+  <h3>A cosa serve</h3>
+  <p>Solo a capire chi di noi conosce professionisti e attività delle categorie che mancano al capitolo BNI Mistral, per poterli <b>presentare di persona</b>. In questa fase le persone si mappano soltanto: le contatta solo chi le conosce già.</p>
+  <h3>Da dove vengono i dati</h3>
+  <p>Da fonti pubbliche: albi degli ordini professionali, siti delle attività, schede di Google Maps e OpenStreetMap (© contributori OpenStreetMap, ODbL). Ogni scheda indica la sua fonte. L'elenco è tenuto da Ludovico Jommi.</p>
+  <h3>Cosa puoi fare</h3>
+  <ul>
+    <li>Segnare le persone che conosci.</li>
+    <li>Contattare di persona <b>chi conosci già</b>, per presentarlo al capitolo o invitarlo a un incontro.</li>
+  </ul>
+  <h3>Cosa non puoi fare</h3>
+  <ul>
+    <li>Girare il link o la password a chi non fa parte del capitolo.</li>
+    <li>Copiare, fotografare o esportare l'elenco, anche solo in parte.</li>
+    <li>Contattare chi non conosci, o mandare messaggi, WhatsApp o email in serie.</li>
+    <li>Inserire i nominativi nelle tue liste, nel tuo CRM o nella tua newsletter, o usarli per vendere i tuoi servizi.</li>
+  </ul>
+  <h3>Se qualcuno chiede di essere tolto</h3>
+  <p>Dillo subito a Ludovico: la scheda viene cancellata e nessuno del capitolo la ricontatta.</p>
+  <h3>Per quanto tempo</h3>
+  <p>La pagina resta attiva fino al <b>31 marzo 2027</b>, poi l'elenco viene cancellato. Chi lascia il capitolo non la usa più.</p>
+  <div class="fondo"><button class="btn" data-chiudi>Ho capito</button></div>
+</div></dialog>
+
+<!-- riepilogo -->
+<dialog id="dRiepilogo"><div class="dlg">
+  <h2>Riepilogo</h2>
+  <p class="dove">Tocca una categoria per vedere solo quella.</p>
+  <table><thead><tr><th>Categoria</th><th>Chiesta da</th><th class="n">In elenco</th><th class="n">Conosciuti</th><th class="n">Contattati</th></tr></thead>
+    <tbody id="tRiepilogo"></tbody></table>
+  <h3>Chi conosce più persone</h3>
+  <table><thead><tr><th>Membro</th><th class="n">Persone segnate</th><th class="n">Contattate da lui/lei</th></tr></thead>
+    <tbody id="tMembri"></tbody></table>
+  <div class="fondo"><button class="btn" data-chiudi>Chiudi</button></div>
+</div></dialog>
+
+<!-- contattato -->
+<dialog id="dContatto"><div class="dlg">
+  <h2>Segna come contattato</h2>
+  <p id="contChi" class="dove"></p>
+  <label for="contNome">Chi l'ha contattato?</label>
+  <input id="contNome" class="campo" list="nomiUsati" maxlength="40" style="margin-top:6px">
+  <div class="fondo"><button class="btn bordo" data-chiudi>Annulla</button><button class="btn" id="bContSalva">Salva</button></div>
+</div></dialog>
+
+<!-- togliere contattato (confirm() del browser dentro Apps Script non sempre compare) -->
+<dialog id="dConferma"><div class="dlg">
+  <h2>Togliere «contattato»?</h2>
+  <p id="confChi" class="dove"></p>
+  <div class="fondo"><button class="btn bordo" data-chiudi>Annulla</button><button class="btn" id="bConfSi">Sì, togli</button></div>
+</div></dialog>
+
+<!-- aggiungi chi manca -->
+<dialog id="dAggiungi"><div class="dlg">
+  <h2>Aggiungi chi manca</h2>
+  <div class="nota">Prima controlla che non ci sia già: mentre scrivi, qui sotto compaiono le schede più simili.</div>
+  <form id="fAggiungi">
+    <label for="aCat">Professione</label>
+    <select id="aCat" class="campo"></select>
+    <label for="aPers">Nome e cognome della persona</label>
+    <input id="aPers" class="campo" maxlength="80" autocapitalize="words" autocomplete="off">
+    <label for="aAtt">Studio o attività (se c'è)</label>
+    <input id="aAtt" class="campo" maxlength="100" autocomplete="off">
+    <label for="aCom">Comune</label>
+    <input id="aCom" class="campo" list="comuni" maxlength="50" autocomplete="off">
+    <datalist id="comuni"></datalist>
+    <label for="aSpec">Specializzazione (se vuoi)</label>
+    <input id="aSpec" class="campo" maxlength="150" autocomplete="off">
+    <div id="aSimili" style="margin-top:10px"></div>
+    <p class="errore" id="aErr"></p>
+    <div class="fondo"><button type="button" class="btn bordo" data-chiudi>Annulla</button><button class="btn" id="bAggSalva">Aggiungi</button></div>
+  </form>
+</div></dialog>
+
+<div class="avviso" id="avviso" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+  // indici delle righe che arrivano dal server (Codice.gs → dati())
+  var ID = 0, CAT = 1, NOME = 2, COGN = 3, ATT = 4, COM = 5, PROV = 6, KM = 7, SPEC = 8, CID = 9, FONTE = 10,
+      CONO = 11, CONT = 12, CONTDA = 13;
+  var PAGINA = 50, BLOCCO = 4000;
+  var NOMI_PROV = { MC: 'Macerata', FM: 'Fermo', AP: 'Ascoli Piceno' };
+
+  var S = { pwd: '', io: '', righe: [], perId: {}, chiesta: {}, filtrate: [], mostrate: 0, contattoId: null, timer: null };
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- memoria del telefono (può mancare: si lavora lo stesso) ---------- */
+  function leggiM(k) { try { return localStorage.getItem('bni_' + k) || ''; } catch (e) { return ''; } }
+  function scriviM(k, v) { try { v ? localStorage.setItem('bni_' + k, v) : localStorage.removeItem('bni_' + k); } catch (e) {} }
+
+  /* ---------- server (Apps Script) o prova ---------- */
+  // tre modi: dentro Apps Script (google.script.run), pagina su GitHub Pages (fetch all'API), prova in locale
+  var GAS = !!(window.google && google.script && google.script.run);
+  var API = 'https://script.google.com/macros/s/AKfycbyCzTVR3o5IW56vWYouhOSMtdxvRXUz7ucNQoKz0mpX9nFgrWz03ivMxzPdtoynFNbYsw/exec';
+  var DEMO = !GAS && /^(localhost|127\.0\.0\.1|)$/.test(location.hostname);
+  function chiama(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    if (DEMO) return Prova[fn].apply(null, args);
+    if (!GAS) {
+      // corpo come testo semplice: niente richiesta preliminare CORS; Google risponde con un redirect che fetch segue
+      return fetch(API, { method: 'POST', body: JSON.stringify({ azione: fn, args: args }) })
+        .then(function (r) { if (!r.ok) throw new Error('Connessione non riuscita, riprova.'); return r.json(); })
+        .then(function (j) { if (j.errore) throw new Error(j.errore); return j.ok; });
+    }
+    return new Promise(function (ok, ko) {
+      var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ko(e && e.message ? e : new Error(String(e))); });
+      r[fn].apply(r, args);
+    });
+  }
+
+  /* ---------- utilità ---------- */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function lista(s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function fmt(n) { return Number(n).toLocaleString('it-IT'); }
+  function avviso(t) { var a = $('avviso'); a.textContent = t; a.hidden = false; clearTimeout(avviso.t); avviso.t = setTimeout(function () { a.hidden = true; }, 3200); }
+  function mostra(id) { ['sAccesso', 'sNome', 'sApp'].forEach(function (x) { $(x).hidden = x !== id; }); }
+  function msgErrore(e) { return String((e && e.message) || e).replace(/^Exception:\s*/, '').replace(/^Error:\s*/, ''); }
+
+  /* ---------- accesso e caricamento ---------- */
+  $('fAccesso').addEventListener('submit', function (ev) { ev.preventDefault(); entra($('pwd').value); });
+
+  function entra(pwd) {
+    $('eAccesso').textContent = ''; $('bAccesso').disabled = true;
+    $('barra').hidden = false; $('barra').firstElementChild.style.width = '30%';
+    $('caricamento').textContent = 'Carico l\'elenco…';
+    // elenco (compresso, e dal telefono se non è cambiato) e segnalazioni insieme: due chiamate in parallelo
+    var salvato = leggiPacchetto();
+    Promise.all([chiama('pacchetto', pwd, salvato ? salvato.v : ''), chiama('stato', pwd), chiama('aggiunte', pwd)]).then(function (ris) {
+      S.pwd = pwd; scriviM('pwd', pwd);
+      $('barra').firstElementChild.style.width = '80%';
+      var p = ris[0];
+      if (p.membri && p.membri.length) S.membri = p.membri;
+      var pronto = p.z ? decomprimi(p.z).then(function (json) { salvaPacchetto(p.v, p.z); return json; })
+                       : decomprimi(salvato.z);
+      return pronto.then(function (json) { usaPacchetto(JSON.parse(json)); aggiungiRighe(ris[2]); ris[1].forEach(applica); });
+    }).then(function () {
+      $('bAccesso').disabled = false;
+      S.io = leggiM('nome');
+      if (S.io) avvia(); else chiediNome();
+    }).catch(function (e) {
+      $('bAccesso').disabled = false; $('barra').hidden = true; $('caricamento').textContent = '';
+      scriviM('pwd', '');
+      $('eAccesso').textContent = msgErrore(e);
+    });
+  }
+
+  /* pacchetto: JSON compresso con gzip in base64 (Codice.gs → pacchetto) */
+  function decomprimi(b64) {
+    var bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (!window.DecompressionStream) return Promise.reject(new Error('Browser troppo vecchio: aggiornalo o usa Chrome.'));
+    return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  }
+  // il telefono tiene il pacchetto compresso (circa mezzo MB): alla seconda apertura non si riscarica
+  function leggiPacchetto() {
+    try {
+      var v = localStorage.getItem('bni_pk_v'), z = localStorage.getItem('bni_pk_z');
+      return v && z ? { v: v, z: z } : null;
+    } catch (e) { return null; }
+  }
+  function salvaPacchetto(v, z) {
+    try { localStorage.setItem('bni_pk_z', z); localStorage.setItem('bni_pk_v', v); }
+    catch (e) { try { localStorage.removeItem('bni_pk_z'); localStorage.removeItem('bni_pk_v'); } catch (e2) {} }
+  }
+  function usaPacchetto(p) {
+    S.chiesta = {};
+    p.categorie.forEach(function (c) { S.chiesta[c[0]] = c[1]; });
+    riempiSelect({ province: p.province, categorie: p.categorie });
+    S.righe = p.righe.map(function (r) {
+      // stessa forma di prima: categoria e fonte da indice a testo, più i campi delle segnalazioni
+      return [r[0], p.categorie[r[1]][0], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], p.fonti[r[10]], '', '', ''];
+    });
+    S.perId = {};
+    S.righe.forEach(function (r) { S.perId[r[ID]] = r; indicizza(r); });
+    $('caricamento').textContent = '';
+  }
+
+  function indicizza(r) { r._t = norm([r[NOME], r[COGN], r[ATT], r[COM], r[SPEC], r[CAT]].join(' ')); }
+
+  function riempiSelect(info) {
+    var sp = $('fProv');
+    sp.length = 1;
+    info.province.forEach(function (p) { sp.add(new Option(NOMI_PROV[p] || p, p)); });
+    S.categorie = info.categorie.map(function (c) { return c[0]; });
+  }
+
+  function aggiornaCategorie() {
+    var conta = {}, sel = $('fCat'), v = sel.value;
+    S.righe.forEach(function (r) { conta[r[CAT]] = (conta[r[CAT]] || 0) + 1; });
+    sel.length = 1;
+    S.categorie.forEach(function (c) { if (conta[c]) sel.add(new Option(c + ' (' + fmt(conta[c]) + ')', c)); });
+    sel.value = v;
+  }
+
+  /* ---------- nome ---------- */
+  function nomiUsati() {
+    var n = {};
+    S.righe.forEach(function (r) { lista(r[CONO]).concat(lista(r[CONTDA])).forEach(function (x) { n[x] = 1; }); });
+    return Object.keys(n).sort(function (a, b) { return a.localeCompare(b, 'it'); });
+  }
+  function aggiornaNomi() {
+    $('nomiUsati').innerHTML = nomiUsati().map(function (n) { return '<option value="' + esc(n) + '">'; }).join('');
+  }
+  // i membri del capitolo come pulsanti grandi: un tocco, niente da scrivere (e i nomi restano sempre uguali)
+  var MEMBRI = ['Ludovico', 'Barbara', 'Matteo', 'Pierluigi', 'Giacomo', 'Daniele', 'Flavia', 'Luca', 'Mascia'];
+  function chiediNome() {
+    aggiornaNomi();
+    // ai membri si aggiungono i nomi già usati da altri: chi riapre da un altro telefono si ritrova con un tocco
+    var visti = {}, tutti = [];
+    (S.membri || MEMBRI).concat(nomiUsati()).forEach(function (m) {
+      var k = m.toLowerCase(); if (!visti[k]) { visti[k] = 1; tutti.push(m); }
+    });
+    $('membri').innerHTML = tutti.map(function (m) {
+      return '<button type="button" class="btn ' + (m === S.io ? '' : 'chiaro') + '" data-membro="' + esc(m) + '">' + esc(m) + '</button>';
+    }).join('');
+    $('nome').value = S.io; mostra('sNome');
+  }
+  $('membri').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-membro]'); if (!b) return;
+    S.io = b.getAttribute('data-membro'); scriviM('nome', S.io); avvia();
+  });
+  $('fNome').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var n = $('nome').value.replace(/[,;<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (!n) return;
+    S.io = n; scriviM('nome', n); avvia();
+  });
+  $('bIo').addEventListener('click', chiediNome);
+
+  /* ---------- app ---------- */
+  function avvia() {
+    mostra('sApp');
+    $('demo').hidden = !DEMO;
+    $('bIo').textContent = '👤 ' + S.io + ' · cambia';
+    aggiornaCategorie(); aggiornaNomi(); filtra();
+    if (!leggiM('visto')) { scriviM('visto', '1'); $('dIstruzioni').showModal(); }
+    clearInterval(S.timer);
+    S.timer = setInterval(function () { if (!document.hidden) aggiornaStato(true); }, 120000);
+  }
+
+  var attesa;
+  $('cerca').addEventListener('input', function () { clearTimeout(attesa); attesa = setTimeout(filtra, 160); });
+  ['fCat', 'fProv', 'fStato', 'fOrdina'].forEach(function (id) { $(id).addEventListener('change', filtra); });
+
+  function filtra() {
+    var parole = norm($('cerca').value).split(/\s+/).filter(Boolean);
+    var cat = $('fCat').value, prov = $('fProv').value, st = $('fStato').value, io = S.io.toLowerCase();
+    var out = S.righe.filter(function (r) {
+      if (cat && r[CAT] !== cat) return false;
+      if (prov && r[PROV] !== prov) return false;
+      if (st === 'conosciuti' && !r[CONO]) return false;
+      if (st === 'miei' && !lista(r[CONO]).some(function (x) { return x.toLowerCase() === io; })) return false;
+      if (st === 'dacontattare' && (!r[CONO] || r[CONT])) return false;
+      if (st === 'contattati' && !r[CONT]) return false;
+      for (var i = 0; i < parole.length; i++) if (r._t.indexOf(parole[i]) < 0) return false;
+      return true;
+    });
+    var ord = $('fOrdina').value;
+    // senza virgolette, puntini e simboli iniziali: "...lei...sposa" e "\"Casa con vista\"" non finiscono in cima
+    var titolo = function (r) { return norm((r[COGN] ? r[COGN] + ' ' + r[NOME] : r[ATT])).replace(/^[^a-z0-9]+/, ''); };
+    out.sort(function (a, b) {
+      if (ord === 'km') { var ka = a[KM] === '' ? 9999 : a[KM], kb = b[KM] === '' ? 9999 : b[KM]; if (ka !== kb) return ka - kb; }
+      if (ord === 'comune') { var c = norm(a[COM] || 'zzz').localeCompare(norm(b[COM] || 'zzz')); if (c) return c; }
+      return titolo(a).localeCompare(titolo(b));
+    });
+    S.filtrate = out; S.mostrate = 0;
+    $('lista').innerHTML = '';
+    disegnaAltre();
+    contatori();
+  }
+
+  function contatori() {
+    var con = 0, cont = 0, fcon = 0, fcont = 0;
+    S.righe.forEach(function (r) { if (r[CONO]) con++; if (r[CONT]) cont++; });
+    S.filtrate.forEach(function (r) { if (r[CONO]) fcon++; if (r[CONT]) fcont++; });
+    $('nTot').textContent = fmt(S.righe.length); $('nCon').textContent = fmt(con); $('nCont').textContent = fmt(cont);
+    $('conta').textContent = fmt(S.filtrate.length) + (S.filtrate.length === 1 ? ' risultato' : ' risultati') +
+      (S.filtrate.length ? ' · ' + fmt(fcon) + (fcon === 1 ? ' conosciuto · ' : ' conosciuti · ') +
+        fmt(fcont) + (fcont === 1 ? ' contattato' : ' contattati') : '');
+  }
+
+  function disegnaAltre() {
+    var pezzo = S.filtrate.slice(S.mostrate, S.mostrate + PAGINA);
+    if (!S.filtrate.length) $('lista').innerHTML = '<div class="vuoto">Nessun risultato. Prova a togliere un filtro o a scrivere meno parole.</div>';
+    $('lista').insertAdjacentHTML('beforeend', pezzo.map(scheda).join(''));
+    S.mostrate += pezzo.length;
+    $('bAltri').hidden = S.mostrate >= S.filtrate.length;
+    $('bAltri').textContent = 'Mostra altri (' + fmt(S.filtrate.length - S.mostrate) + ')';
+  }
+  $('bAltri').addEventListener('click', disegnaAltre);
+
+  function linkMaps(r) {
+    if (r[CID]) return 'https://maps.google.com/?cid=' + r[CID];
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([r[ATT], r[COM]].filter(Boolean).join(' '));
+  }
+
+  function scheda(r) {
+    var persona = [r[NOME], r[COGN]].filter(Boolean).join(' ');
+    var titolo = persona || r[ATT];
+    // sotto il nome della persona, lo studio; non se è solo "Avv. Nome Cognome" (righe degli albi)
+    var sotto = persona && r[ATT] && norm(r[ATT]) !== norm(titolo) && !/^(avv|arch|geom|ing|dott)\.?\s/i.test(r[ATT]) ? r[ATT] : '';
+    var dove = r[COM] ? r[COM] + (r[PROV] ? ' (' + r[PROV] + ')' : '') : (NOMI_PROV[r[PROV]] ? 'Provincia di ' + NOMI_PROV[r[PROV]] : '');
+    if (r[KM] !== '') dove += (dove ? ' · ' : '') + r[KM] + ' km da Civitanova';
+    var cono = lista(r[CONO]), io = S.io.toLowerCase();
+    var mio = cono.some(function (x) { return x.toLowerCase() === io; });
+    var h = '<div class="scheda' + (cono.length ? ' conosciuta' : '') + '" data-id="' + esc(r[ID]) + '">' +
+      '<div class="testa"><span class="chip">' + esc(r[CAT]) + '</span><span class="dove">' + esc(dove) + '</span></div>' +
+      '<div class="nome">' + esc(titolo) + '</div>' +
+      (sotto && sotto !== titolo ? '<div class="studio">' + esc(sotto) + '</div>' : '') +
+      (r[SPEC] ? '<div class="spec">' + esc(r[SPEC]) + '</div>' : '') +
+      '<div class="piede">Fonte: ' + esc(r[FONTE] || 'n.d.') + ' · <a href="' + esc(linkMaps(r)) + '" target="_blank" rel="noopener">' +
+      (r[CID] ? 'Apri su Google Maps' : 'Cerca su Google Maps') + ' ↗</a></div>';
+    if (cono.length || r[CONT]) {
+      h += '<div class="chi">' + (cono.length ? 'Lo conoscono: ' + cono.map(function (x) { return '<span class="ok">' + esc(x) + '</span>'; }).join('') : '') +
+        (r[CONT] ? ' <span class="cont">Contattato' + (r[CONTDA] ? ' da ' + esc(r[CONTDA]) : '') + '</span>' : '') + '</div>';
+    }
+    h += '<div class="azioni">' +
+      (mio ? '<button class="btn si" data-az="non_conosco">✓ Lo conosco</button>'
+           : '<button class="btn chiaro" data-az="conosco">Lo conosco</button>') +
+      (r[CONT] ? '<button class="btn cont-si" data-az="non_contattato">✓ Contattato</button>'
+               : '<button class="btn bordo" data-az="contattato">Segna contattato</button>') +
+      '</div></div>';
+    return h;
+  }
+
+  function ridisegna(id) {
+    var el = document.querySelector('.scheda[data-id="' + CSS.escape(String(id)) + '"]');
+    if (el) el.outerHTML = scheda(S.perId[id]);
+  }
+
+  /* ---------- segnalazioni ---------- */
+  $('lista').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button[data-az]'); if (!b) return;
+    var id = b.closest('.scheda').getAttribute('data-id');
+    var r = S.perId[id] || S.perId[Number(id)]; if (!r) return;
+    var az = b.getAttribute('data-az');
+    if (az === 'contattato') {
+      S.contattoId = r[ID];
+      $('contChi').textContent = [r[NOME], r[COGN]].filter(Boolean).join(' ') || r[ATT];
+      $('contNome').value = S.io; $('dContatto').showModal(); $('contNome').select();
+      return;
+    }
+    if (az === 'non_contattato') {
+      S.confermaId = r[ID];
+      $('confChi').textContent = ([r[NOME], r[COGN]].filter(Boolean).join(' ') || r[ATT]) + (r[CONTDA] ? ' · contattato da ' + r[CONTDA] : '');
+      $('dConferma').showModal();
+      return;
+    }
+    invia(r[ID], az, S.io);
+  });
+
+  $('bConfSi').addEventListener('click', function () {
+    $('dConferma').close();
+    invia(S.confermaId, 'non_contattato', S.io);
+  });
+
+  $('bContSalva').addEventListener('click', function () {
+    var n = $('contNome').value.trim(); if (!n) { $('contNome').focus(); return; }
+    $('dContatto').close();
+    invia(S.contattoId, 'contattato', n);
+  });
+
+  // la scheda cambia subito (senza aspettare Google); se il salvataggio non riesce torna com'era
+  function invia(id, az, nome) {
+    var r = S.perId[id], prima = [id, r[CONO], r[CONT], r[CONTDA]];
+    var l = lista(r[CONO]).filter(function (x) { return x.toLowerCase() !== nome.toLowerCase(); });
+    if (az === 'conosco') l.push(nome);
+    var dopo = [id, az === 'conosco' || az === 'non_conosco' ? l.join(', ') : r[CONO],
+      az === 'contattato' ? 'sì' : az === 'non_contattato' ? '' : r[CONT],
+      az === 'contattato' ? nome : az === 'non_contattato' ? '' : r[CONTDA]];
+    applica(dopo); ridisegna(id); contatori();
+    avviso({ conosco: 'Segnato: lo conosci.', non_conosco: 'Tolto il tuo nome.', contattato: 'Segnato come contattato.', non_contattato: 'Tolto il segno «contattato».' }[az]);
+    chiama('segna', S.pwd, id, az, nome, [r[CAT], r[ATT], r[COM]]).then(function (st) {
+      applica(st); ridisegna(id); contatori(); aggiornaNomi();
+    }).catch(function (e) {
+      applica(prima); ridisegna(id); contatori();
+      avviso('Non salvato, riprova: ' + msgErrore(e));
+      if (/password/i.test(msgErrore(e))) esci();
+    });
+  }
+
+  function applica(st) {
+    var r = S.perId[st[0]]; if (!r) return;
+    r[CONO] = st[1]; r[CONT] = st[2]; r[CONTDA] = st[3];
+  }
+
+  function aggiornaStato(silenzioso) {
+    return Promise.all([chiama('stato', S.pwd), chiama('aggiunte', S.pwd)]).then(function (ris) {
+      aggiungiRighe(ris[1]);
+      var righe = ris[0];
+      var prima = {};
+      S.righe.forEach(function (r) { if (r[CONO] || r[CONT]) prima[r[ID]] = r[CONO] + '|' + r[CONT] + '|' + r[CONTDA]; r[CONO] = ''; r[CONT] = ''; r[CONTDA] = ''; });
+      righe.forEach(applica);
+      var cambiate = 0;
+      S.righe.forEach(function (r) { if ((prima[r[ID]] || '||') !== r[CONO] + '|' + r[CONT] + '|' + r[CONTDA]) cambiate++; });
+      if (cambiate || !silenzioso) {
+        var y = window.scrollY, mostrate = S.mostrate;
+        filtra();
+        while (S.mostrate < Math.min(mostrate, S.filtrate.length)) disegnaAltre();
+        window.scrollTo(0, y);
+        aggiornaNomi();
+      }
+      if (!silenzioso) avviso(cambiate ? 'Aggiornato: ' + cambiate + ' schede cambiate.' : 'Tutto aggiornato.');
+    }).catch(function (e) { if (!silenzioso) avviso('Aggiornamento non riuscito: ' + msgErrore(e)); });
+  }
+  $('bAggiorna').addEventListener('click', function () { aggiornaStato(false); });
+
+  function esci() { scriviM('pwd', ''); S.pwd = ''; clearInterval(S.timer); mostra('sAccesso'); }
+
+  /* ---------- schede aggiunte dai membri ---------- */
+  // dal foglio Aggiunte: [id, categoria, nome, cognome, attività, comune, provincia, spec, aggiunto da, aggiunto il]
+  function aggiungiRighe(lista) {
+    (lista || []).forEach(function (a) {
+      var id = Number(a[0]); if (!id || S.perId[id]) return;
+      var r = [id, a[1], a[2], a[3], a[4], a[5], a[6], '', a[7], '', 'Aggiunto da ' + a[8] + ' il ' + String(a[9]).slice(0, 10), '', '', ''];
+      S.righe.push(r); S.perId[id] = r; indicizza(r);
+      if (S.categorie.indexOf(a[1]) < 0) S.categorie.push(a[1]);
+    });
+  }
+  function provinciaDi(c) {
+    var n = norm(c);
+    for (var i = 0; i < S.righe.length; i++) if (S.righe[i][PROV] && norm(S.righe[i][COM]) === n) return S.righe[i][PROV];
+    return '';
+  }
+  $('bAggiungi').addEventListener('click', function () {
+    $('aCat').innerHTML = '<option value="">Scegli la professione…</option>' +
+      S.categorie.slice().sort(function (a, b) { return a.localeCompare(b, 'it'); }).map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+    $('aCat').value = $('fCat').value;
+    ['aPers', 'aAtt', 'aCom', 'aSpec'].forEach(function (id) { $(id).value = ''; });
+    $('aSimili').innerHTML = ''; $('aErr').textContent = '';
+    if (!$('comuni').options.length) {
+      var c = {}; S.righe.forEach(function (r) { if (r[COM]) c[r[COM]] = 1; });
+      $('comuni').innerHTML = Object.keys(c).sort(function (a, b) { return a.localeCompare(b, 'it'); }).map(function (x) { return '<option value="' + esc(x) + '">'; }).join('');
+    }
+    $('dAggiungi').showModal();
+  });
+  var attesaSimili;
+  function simili() {
+    var parole = norm($('aPers').value + ' ' + $('aAtt').value).split(/\s+/).filter(function (w) { return w.length >= 3; });
+    if (!parole.length) { $('aSimili').innerHTML = ''; return; }
+    var com = norm($('aCom').value);
+    var trovate = S.righe.filter(function (r) { return parole.every(function (w) { return r._t.indexOf(w) >= 0; }); })
+      .sort(function (a, b) { return (norm(b[COM]) === com) - (norm(a[COM]) === com); }).slice(0, 5);
+    $('aSimili').innerHTML = trovate.length ? '<p class="dove" style="margin:0"><b>Forse è già qui:</b></p>' + trovate.map(function (r) {
+      var t = [r[NOME], r[COGN]].filter(Boolean).join(' ') || r[ATT];
+      return '<div class="simile"><span>' + esc(t) + '<br><span class="dove">' + esc(r[CAT]) + (r[COM] ? ' · ' + esc(r[COM]) : '') + '</span></span>' +
+        '<button type="button" class="btn chiaro" data-conosco="' + esc(r[ID]) + '">È lui/lei: lo conosco</button></div>';
+    }).join('') : '<p class="dove" style="margin:0">Nessuna scheda simile: puoi aggiungerla.</p>';
+  }
+  ['aPers', 'aAtt', 'aCom'].forEach(function (id) { $(id).addEventListener('input', function () { clearTimeout(attesaSimili); attesaSimili = setTimeout(simili, 200); }); });
+  $('aSimili').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-conosco]'); if (!b) return;
+    var r = S.perId[Number(b.getAttribute('data-conosco'))]; if (!r) return;
+    $('dAggiungi').close();
+    if (!lista(r[CONO]).some(function (x) { return x.toLowerCase() === S.io.toLowerCase(); })) invia(r[ID], 'conosco', S.io);
+    $('fCat').value = ''; $('fProv').value = ''; $('fStato').value = '';
+    $('cerca').value = [r[NOME], r[COGN]].filter(Boolean).join(' ') || r[ATT]; filtra(); window.scrollTo(0, 0);
+  });
+  $('fAggiungi').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var pers = $('aPers').value.replace(/\s+/g, ' ').trim(), parti = pers.split(' '), com = $('aCom').value.trim();
+    var d = { categoria: $('aCat').value, nome: pers ? parti[0] : '', cognome: parti.slice(1).join(' '), attivita: $('aAtt').value.trim(),
+      comune: com, provincia: provinciaDi(com), spec: $('aSpec').value.trim() };
+    var err = !d.categoria ? 'Scegli la professione.' : (!pers && !d.attivita) ? 'Scrivi il nome della persona o dello studio.' : !com ? 'Scrivi il comune.' : '';
+    if (err) { $('aErr').textContent = err; return; }
+    $('aErr').textContent = ''; $('bAggSalva').disabled = true; $('bAggSalva').textContent = 'Salvo…';
+    chiama('aggiungi', S.pwd, d, S.io).then(function (res) {
+      aggiungiRighe([res.riga]); applica(res.stato); aggiornaCategorie(); aggiornaNomi();
+      $('dAggiungi').close();
+      $('fCat').value = ''; $('fProv').value = ''; $('fStato').value = ''; $('cerca').value = pers || d.attivita;
+      filtra(); window.scrollTo(0, 0);
+      avviso('Aggiunto, grazie! Ora lo vedono tutti.');
+    }).catch(function (e) { $('aErr').textContent = 'Non salvato: ' + msgErrore(e); })
+      .then(function () { $('bAggSalva').disabled = false; $('bAggSalva').textContent = 'Aggiungi'; });
+  });
+
+  /* ---------- riepilogo e finestre ---------- */
+  $('bRiepilogo').addEventListener('click', function () {
+    var cat = {}, membri = {};
+    S.righe.forEach(function (r) {
+      var c = cat[r[CAT]] = cat[r[CAT]] || [0, 0, 0];
+      c[0]++; if (r[CONO]) c[1]++; if (r[CONT]) c[2]++;
+      lista(r[CONO]).forEach(function (m) { (membri[m] = membri[m] || [0, 0])[0]++; });
+      if (r[CONTDA]) (membri[r[CONTDA]] = membri[r[CONTDA]] || [0, 0])[1]++;
+    });
+    $('tRiepilogo').innerHTML = Object.keys(cat).sort(function (a, b) { return a.localeCompare(b, 'it'); }).map(function (k) {
+      return '<tr class="clic" data-cat="' + esc(k) + '"><td>' + esc(k) + '</td><td>' + esc(S.chiesta[k] || '') + '</td><td class="n">' + fmt(cat[k][0]) +
+        '</td><td class="n">' + fmt(cat[k][1]) + '</td><td class="n">' + fmt(cat[k][2]) + '</td></tr>';
+    }).join('');
+    var m = Object.keys(membri).sort(function (a, b) { return membri[b][0] - membri[a][0] || a.localeCompare(b, 'it'); });
+    $('tMembri').innerHTML = m.length ? m.map(function (k) {
+      return '<tr><td>' + esc(k) + '</td><td class="n">' + fmt(membri[k][0]) + '</td><td class="n">' + fmt(membri[k][1]) + '</td></tr>';
+    }).join('') : '<tr><td colspan="3" class="dove">Ancora nessuno: inizia tu!</td></tr>';
+    $('dRiepilogo').showModal();
+  });
+  $('tRiepilogo').addEventListener('click', function (ev) {
+    var tr = ev.target.closest('tr[data-cat]'); if (!tr) return;
+    $('fCat').value = tr.getAttribute('data-cat'); $('cerca').value = ''; $('fStato').value = ''; $('fProv').value = '';
+    $('dRiepilogo').close(); filtra(); window.scrollTo(0, 0);
+  });
+  $('bIstruzioni').addEventListener('click', function () { $('dIstruzioni').showModal(); });
+  document.addEventListener('click', function (ev) { var b = ev.target.closest('[data-chiudi]'); if (b) b.closest('dialog').close(); });
+
+  /* ---------- modalità prova (pagina aperta fuori da Apps Script) ---------- */
+  var Prova = (function () {
+    var cats = ['Architetti', 'Avvocati', 'Geometri', 'Ingegneri strutturisti', 'Psicologo/a', 'Officine meccaniche', 'Palestre', 'Notai', 'Fiorista', 'Strutture ricettive'];
+    var nomi = ['Marco', 'Giulia', 'Luca', 'Francesca', 'Andrea', 'Sara', 'Paolo', 'Chiara', 'Nicola', 'Elena'];
+    var cogn = ['Rossi', 'Bianchi', 'Ferri', 'Mancini', 'Marinelli', 'Cingolani', 'Pierantoni', 'Giustozzi', 'Nardi', 'Pagliarini', 'Tombolini', 'Santarelli'];
+    var com = [['Civitanova Marche', 'MC', 0], ['Macerata', 'MC', 22], ['Fermo', 'FM', 24], ['Porto San Giorgio', 'FM', 20], ['Ascoli Piceno', 'AP', 64], ['San Benedetto del Tronto', 'AP', 47], ['Tolentino', 'MC', 35], ['Recanati', 'MC', 18]];
+    var righe = [];
+    for (var i = 1; i <= 300; i++) {
+      var c = cats[i % cats.length], cm = com[i % com.length], per = i % 3 !== 0;
+      var n = per ? nomi[i % nomi.length] : '', co = per ? cogn[(i * 7) % cogn.length] : '';
+      righe.push([i, c, n, co, per ? (c === 'Avvocati' ? 'Studio Legale ' : 'Studio ') + co : 'Attività di prova ' + i, cm[0], cm[1], cm[2] + (i % 5),
+        i % 4 === 0 ? 'ristrutturazioni, efficienza energetica' : '', i % 2 ? '1234567890' : '', i % 2 ? 'Google Maps' : 'Albo Ordine di prova',
+        i % 11 === 0 ? 'Pierluigi, Flavia' : '', i % 22 === 0 ? 'sì' : '', i % 22 === 0 ? 'Pierluigi' : '']);
+    }
+    var aggiunteProva = [];
+    function dopo(x) { return new Promise(function (ok) { setTimeout(function () { ok(JSON.parse(JSON.stringify(x))); }, 250); }); }
+    function ctrl(p) { if (String(p || '').toLowerCase().replace(/[^a-z0-9]/g, '') !== 'prova') return Promise.reject(new Error('Password errata. (In prova la password è: prova)')); }
+    function gz(testo) {  // come Utilities.gzip + base64Encode del server
+      return new Response(new Blob([testo]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer().then(function (b) {
+        var s = '', u = new Uint8Array(b); for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s);
+      });
+    }
+    return {
+      pacchetto: function (p, v) {
+        var e = ctrl(p); if (e) return e;
+        if (v === 'prova-1') return dopo({ v: 'prova-1', z: null });
+        var cs = cats.slice().sort();
+        var pk = { categorie: cs.map(function (c) { return [c, c === 'Avvocati' ? 'Matteo, Flavia, Luca' : '']; }),
+          fonti: ['Google Maps', 'Albo Ordine di prova'], province: ['AP', 'FM', 'MC'],
+          righe: righe.map(function (r) { return [r[0], cs.indexOf(r[1]), r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10] === 'Google Maps' ? 0 : 1]; }) };
+        return gz(JSON.stringify(pk)).then(function (z) { return dopo({ v: 'prova-1', z: z }); });
+      },
+      accedi: function (p) { return ctrl(p) || dopo({ righe: righe.length, categorie: cats.slice().sort().map(function (c) { return [c, c === 'Avvocati' ? 'Matteo, Flavia, Luca' : '']; }), province: ['AP', 'FM', 'MC'] }); },
+      dati: function (p, da, q) { return ctrl(p) || dopo(righe.slice(da, da + q)); },
+      aggiunte: function (p) { return ctrl(p) || dopo(aggiunteProva); },
+      aggiungi: function (p, d, nome) {
+        var e = ctrl(p); if (e) return e;
+        var a = [String(1000001 + aggiunteProva.length), d.categoria, d.nome, d.cognome, d.attivita, d.comune, d.provincia, d.spec, nome, 'ora'];
+        aggiunteProva.push(a);
+        return dopo({ riga: a, stato: [a[0], nome, '', '', 'ora'] });
+      },
+      stato: function (p) { return ctrl(p) || dopo(righe.filter(function (r) { return r[CONO] || r[CONT]; }).map(function (r) { return [r[ID], r[CONO], r[CONT], r[CONTDA], '']; })); },
+      segna: function (p, id, az, nome) {
+        var e = ctrl(p); if (e) return e;
+        var r = righe[id - 1], l = lista(r[CONO]).filter(function (x) { return x.toLowerCase() !== nome.toLowerCase(); });
+        if (az === 'conosco') l.push(nome);
+        if (az === 'conosco' || az === 'non_conosco') r[CONO] = l.join(', ');
+        if (az === 'contattato') { r[CONT] = 'sì'; r[CONTDA] = nome; }
+        if (az === 'non_contattato') { r[CONT] = ''; r[CONTDA] = ''; }
+        return dopo([id, r[CONO], r[CONT], r[CONTDA], 'ora']);
+      },
+    };
+  })();
+
+  /* ---------- partenza: se la password è già salvata, entra da solo ---------- */
+  var salvata = leggiM('pwd');
+  if (salvata) { $('pwd').value = salvata; entra(salvata); }
+})();
+</script>
+</body>
+</html>
