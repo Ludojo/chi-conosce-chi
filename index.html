@@ -296,18 +296,34 @@
     if (DEMO) return Prova[fn].apply(null, args);
     if (!GAS) {
       // corpo come testo semplice: niente richiesta preliminare CORS; Google risponde con un redirect che fetch segue
-      // mai un caricamento infinito: dopo 45 secondi si ferma e dice di riprovare
-      var ctl = window.AbortController ? new AbortController() : null;
-      var t = ctl && setTimeout(function () { ctl.abort(); }, 45000);
-      return fetch(API, { method: 'POST', body: JSON.stringify({ azione: fn, args: args }), signal: ctl ? ctl.signal : undefined })
-        .then(function (r) { if (!r.ok) throw new Error('Connessione non riuscita, riprova.'); return r.json(); })
-        .then(function (j) { clearTimeout(t); if (j.errore) throw new Error(j.errore); return j.ok; },
-              function (e) { clearTimeout(t); throw new Error(e && e.name === 'AbortError' ? 'La connessione è lenta: riprova tra poco.' : msgErrore(e)); });
+      return tenta(fn, args, 1);
     }
     return new Promise(function (ok, ko) {
       var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ko(e && e.message ? e : new Error(String(e))); });
       r[fn].apply(r, args);
     });
+  }
+
+  // Google a volte perde la risposta (rimanda alla pagina invece del risultato) o la fa aspettare molto:
+  // ogni tentativo si ferma dopo 40 secondi e la pagina riprova da sola fino a 3 volte.
+  // Tutte le azioni si possono ripetere senza danni ("Aggiungi" porta una chiave unica).
+  function tenta(fn, args, n) {
+    var ctl = window.AbortController ? new AbortController() : null;
+    var t = ctl && setTimeout(function () { ctl.abort(); }, 40000);
+    return fetch(API, { method: 'POST', body: JSON.stringify({ azione: fn, args: args }), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error('rete'); return r.text(); })
+      .then(function (txt) {
+        clearTimeout(t);
+        var j; try { j = JSON.parse(txt); } catch (e) { throw new Error('rete'); }
+        if (j.errore) { var eS = new Error(j.errore); eS.server = true; throw eS; }
+        return j.ok;
+      })
+      .catch(function (e) {
+        clearTimeout(t);
+        if (e && e.server) throw e;
+        if (n < 3) return new Promise(function (ok) { setTimeout(ok, 1500 * n); }).then(function () { return tenta(fn, args, n + 1); });
+        throw new Error(e && e.name === 'AbortError' ? 'La connessione è lenta: riprova tra poco.' : 'Google non risponde bene in questo momento: riprova tra poco.');
+      });
   }
 
   /* ---------- utilità ---------- */
@@ -670,7 +686,8 @@
     ev.preventDefault();
     var pers = $('aPers').value.replace(/\s+/g, ' ').trim(), parti = pers.split(' '), com = $('aCom').value.trim();
     var d = { categoria: $('aCat').value, nome: pers ? parti[0] : '', cognome: parti.slice(1).join(' '), attivita: $('aAtt').value.trim(),
-      comune: com, provincia: provinciaDi(com), spec: $('aSpec').value.trim() };
+      comune: com, provincia: provinciaDi(com), spec: $('aSpec').value.trim(),
+      chiave: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
     var err = !d.categoria ? 'Scegli la professione.' : (!pers && !d.attivita) ? 'Scrivi il nome della persona o dello studio.' : !com ? 'Scrivi il comune.' : '';
     if (err) { $('aErr').textContent = err; return; }
     // la scheda compare subito (ID provvisorio) e si salva dietro; se il salvataggio non riesce sparisce e si avvisa
